@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>똑딱똑딱 시계 탐험</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap">
+<style>
+  /* Layout: 교실 벽시계 한 개가 화면의 중심. 짧은바늘은 주황, 긴바늘은 파랑으로 끝까지 같은 약속을 지킨다. */
+  :root {
+    --bg: #edf3fb;
+    --paper: #ffffff;
+    --fg: #1d2947;
+    --muted: #56658a;
+    --line: #bccbe4;
+    --accent: #2c63c9;
+    --on-accent: #ffffff;
+    --accent-soft: #dce8fb;
+    --hour: #e2602f;
+    --minute: #2c63c9;
+    --right: #1f8a5b;
+    --right-soft: #dcf2e7;
+    --wrong: #d0352c;
+    --wrong-soft: #fde4e1;
+    --focus: #ffc23a;
+    --display: "Jua", "Gowun Dodum", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    --body: "Gowun Dodum", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #121a2e;
+      --paper: #1b2640;
+      --fg: #eef2fb;
+      --muted: #a9b6d4;
+      --line: #3a4a70;
+      --accent: #7fa8f5;
+      --on-accent: #10182b;
+      --accent-soft: #273a63;
+      --hour: #ff9466;
+      --minute: #7fa8f5;
+      --right: #6fd3a2;
+      --right-soft: #1f3f35;
+      --wrong: #ff8a80;
+      --wrong-soft: #4a2626;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #121a2e;
+    --paper: #1b2640;
+    --fg: #eef2fb;
+    --muted: #a9b6d4;
+    --line: #3a4a70;
+    --accent: #7fa8f5;
+    --on-accent: #10182b;
+    --accent-soft: #273a63;
+    --hour: #ff9466;
+    --minute: #7fa8f5;
+    --right: #6fd3a2;
+    --right-soft: #1f3f35;
+    --wrong: #ff8a80;
+    --wrong-soft: #4a2626;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--body);
+    font-size: 20px;
+    line-height: 1.65;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+  .page {
+    max-width: 640px;
+    margin: 0 auto;
+    padding-block: 28px 48px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  section { display: flex; flex-direction: column; gap: 22px; }
+  h1, h2, h3 { font-family: var(--display); font-weight: 400; margin: 0; text-wrap: balance; }
+  h1 { font-size: clamp(36px, 10vw, 52px); line-height: 1.2; text-align: center; }
+  h2 { font-size: 27px; line-height: 1.4; }
+  h2:focus { outline: none; }
+  p { margin: 0; }
+
+  /* 시계 */
+  .clock { display: block; width: 100%; height: auto; }
+  .clock .face { fill: var(--paper); stroke: var(--fg); stroke-width: 4; }
+  .clock .tick { stroke: var(--muted); stroke-width: 1.5; }
+  .clock .tick.big { stroke: var(--fg); stroke-width: 3; }
+  .clock .num { fill: var(--fg); font-family: var(--display); font-size: 17px; text-anchor: middle; dominant-baseline: central; }
+  .clock .hour { stroke: var(--hour); stroke-width: 7; stroke-linecap: round; }
+  .clock .minute { stroke: var(--minute); stroke-width: 4.5; stroke-linecap: round; }
+  .clock .pin { fill: var(--fg); }
+  .clocks { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; }
+  .clocks figure { margin: 0; width: min(220px, 100%); display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .clocks.pair figure { width: min(180px, calc(50% - 10px)); }
+  .clocks figcaption { font-family: var(--display); font-size: 19px; color: var(--muted); }
+
+  /* 메인 */
+  .hero-clock { width: min(220px, 62vw); margin: 0 auto; }
+  .lead { font-size: 21px; text-align: center; }
+  .legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 20px; font-size: 18px; }
+  .legend span { display: inline-flex; align-items: center; gap: 8px; }
+  .legend i { display: inline-block; width: 28px; height: 7px; border-radius: 4px; }
+  .legend .h { background: var(--hour); width: 20px; }
+  .legend .m { background: var(--minute); }
+  .facts {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    margin: 0;
+    background: var(--paper);
+    border: 2px solid var(--line);
+    border-radius: 14px;
+  }
+  .facts div { display: flex; flex-direction: column; align-items: center; padding-block: 12px; border-left: 2px solid var(--line); }
+  .facts div:first-child { border-left: 0; }
+  .facts dt { font-size: 16px; color: var(--muted); }
+  .facts dd { margin: 0; font-family: var(--display); font-size: 24px; }
+
+  /* 버튼 */
+  .btn {
+    font-family: var(--display);
+    font-size: 22px;
+    min-height: 60px;
+    padding: 8px 28px;
+    border-radius: 14px;
+    border: 3px solid var(--accent);
+    background: var(--paper);
+    color: var(--accent);
+    cursor: pointer;
+    transition: transform 120ms ease;
+  }
+  .btn.primary { background: var(--accent); color: var(--on-accent); }
+  .btn:hover:not(:disabled) { transform: translateY(-2px); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn:focus-visible, .option:focus-within { outline: 4px solid var(--focus); outline-offset: 2px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; }
+  .actions .btn { flex: 1 1 160px; }
+
+  /* 진행 표시 */
+  .progress { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .progress .count { font-family: var(--display); font-size: 21px; color: var(--muted); }
+  .dots { display: flex; gap: 6px; }
+  .dots span {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    border: 2px solid var(--line);
+    background: var(--paper);
+    font-size: 16px;
+    color: var(--muted);
+  }
+  .dots span.done { border-color: var(--accent); background: var(--accent-soft); color: var(--fg); }
+  .dots span.now { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+
+  /* 보기 */
+  .options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; border: 0; padding: 0; margin: 0; min-width: 0; }
+  .options.long { grid-template-columns: 1fr; }
+  .option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 68px;
+    padding: 10px 14px;
+    background: var(--paper);
+    border: 3px solid var(--line);
+    border-radius: 14px;
+    cursor: pointer;
+    font-size: 22px;
+  }
+  .option:hover { border-color: var(--accent); }
+  .option input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .option .num {
+    flex: none;
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border: 2px solid var(--accent);
+    border-radius: 50%;
+    font-family: var(--display);
+    font-size: 19px;
+    color: var(--accent);
+  }
+  .option .text { min-width: 0; }
+  .option.picked { border-color: var(--accent); background: var(--accent-soft); }
+  .option.picked .num { background: var(--accent); color: var(--on-accent); }
+  .hint { font-size: 17px; color: var(--muted); min-height: 1.65em; }
+
+  /* 결과 */
+  .result { align-items: center; text-align: center; }
+  .score { position: relative; width: min(240px, 70vw); }
+  .score svg { display: block; width: 100%; height: auto; transform: rotate(-90deg); }
+  .score .track { fill: var(--paper); stroke: var(--line); stroke-width: 14; }
+  .score .fill { fill: none; stroke: var(--accent); stroke-width: 14; stroke-linecap: round; animation: sweep 1s ease-out; }
+  @keyframes sweep { from { stroke-dashoffset: 534; } }
+  .score strong {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: clamp(48px, 15vw, 64px);
+    color: var(--accent);
+  }
+  .tally { font-family: var(--display); font-size: 24px; }
+  .marks {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    width: 100%;
+    max-width: 420px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    border: 2px solid var(--line);
+    border-radius: 14px;
+  }
+  .marks li { display: flex; flex-direction: column; align-items: center; padding-block: 8px; border-left: 2px solid var(--line); font-size: 16px; color: var(--muted); }
+  .marks li:first-child { border-left: 0; }
+  .marks b { font-family: var(--display); font-weight: 400; font-size: 30px; line-height: 1.2; }
+  .marks .right b { color: var(--right); }
+  .marks .wrong b { color: var(--wrong); }
+  .result .actions { width: 100%; }
+
+  /* 오답 확인 */
+  .review { display: flex; flex-direction: column; gap: 16px; }
+  .review article {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: var(--paper);
+    border: 2px solid var(--line);
+    border-radius: 14px;
+    padding: 18px;
+  }
+  .review h3 { font-size: 23px; line-height: 1.45; }
+  .review .clocks figure { width: min(150px, 100%); }
+  .review .clocks.pair figure { width: min(140px, calc(50% - 10px)); }
+  .answer { display: flex; flex-direction: column; border-radius: 10px; padding: 8px 14px; }
+  .answer .tag { font-family: var(--display); font-size: 18px; }
+  .answer.mine { background: var(--wrong-soft); }
+  .answer.mine .tag { color: var(--wrong); }
+  .answer.correct { background: var(--right-soft); }
+  .answer.correct .tag { color: var(--right); }
+  .explain { color: var(--muted); font-size: 19px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .score .fill { animation: none; }
+    .btn { transition: none; }
+  }
+  @media (max-width: 380px) {
+    .options { grid-template-columns: 1fr; }
+    .dots span { width: 30px; height: 30px; }
+  }
+</style>
+</head>
+<body>
+<main class="page">
+  <section id="home">
+    <div class="hero-clock" id="hero-clock"></div>
+    <h1>똑딱똑딱 시계 탐험</h1>
+    <p class="lead">시계를 읽고, 걸린 시간을 알아보는 퀴즈예요. 다섯 문제를 풀어 시계 박사가 되어 보세요!</p>
+    <p class="legend">
+      <span><i class="h"></i>짧은바늘은 '시'</span>
+      <span><i class="m"></i>긴바늘은 '분'</span>
+    </p>
+    <dl class="facts">
+      <div><dt>문제</dt><dd>5문제</dd></div>
+      <div><dt>한 문제</dt><dd>20점</dd></div>
+      <div><dt>만점</dt><dd>100점</dd></div>
+    </dl>
+    <div class="actions">
+      <button class="btn primary" id="start" type="button">시작하기</button>
+    </div>
+  </section>
+
+  <section id="quiz" hidden>
+    <div class="progress">
+      <span class="count" id="count"></span>
+      <div class="dots" id="dots" aria-hidden="true"></div>
+    </div>
+    <h2 id="question" tabindex="-1"></h2>
+    <div id="figure"></div>
+    <fieldset class="options" id="options" aria-labelledby="question"></fieldset>
+    <p class="hint" id="hint" aria-live="polite"></p>
+    <div class="actions">
+      <button class="btn" id="prev" type="button">이전</button>
+      <button class="btn primary" id="next" type="button">다음</button>
+    </div>
+  </section>
+
+  <section id="result" class="result" hidden>
+    <h2 id="result-title" tabindex="-1">내 점수</h2>
+    <div class="score" id="score"></div>
+    <p class="tally" id="tally"></p>
+    <ol class="marks" id="marks"></ol>
+    <p id="message"></p>
+    <div class="actions">
+      <button class="btn primary" id="show-review" type="button">오답 확인</button>
+      <button class="btn" id="retry" type="button">다시 풀기</button>
+    </div>
+  </section>
+
+  <section id="wrong" hidden>
+    <h2 id="wrong-title" tabindex="-1">틀린 문제 다시 보기</h2>
+    <div class="review" id="review"></div>
+    <div class="actions">
+      <button class="btn" id="back" type="button">점수 보기</button>
+      <button class="btn primary" id="retry2" type="button">다시 풀기</button>
+    </div>
+  </section>
+</main>
+
+<script>
+  const QUESTIONS = [
+    {
+      question: "시계가 나타내는 시각은 몇 시 몇 분인가요?",
+      clocks: [{ hour: 4, minute: 35 }],
+      options: ["7시 20분", "4시 35분", "5시 35분", "4시 7분"],
+      answer: 1,
+      explanation: "짧은바늘이 4와 5 사이에 있으면 4시예요. 긴바늘이 7을 가리키면 5분씩 7번이라 35분이에요."
+    },
+    {
+      question: "1시간 20분은 몇 분인가요?",
+      options: ["120분", "70분", "80분", "60분"],
+      answer: 2,
+      explanation: "1시간은 60분이에요. 60분과 20분을 더하면 80분이에요."
+    },
+    {
+      question: "시계가 나타내는 8시 50분을 다르게 말한 것은?",
+      clocks: [{ hour: 8, minute: 50 }],
+      options: ["9시 10분 전", "8시 10분 전", "9시 50분 전", "8시 10분"],
+      answer: 0,
+      explanation: "8시 50분에서 10분이 더 지나면 9시예요. 그래서 9시 10분 전이라고도 해요."
+    },
+    {
+      question: "지우는 오후 1시 30분에 도서관에 들어가서 오후 3시에 나왔어요. 도서관에 있었던 시간은?",
+      clocks: [{ hour: 1, minute: 30, label: "들어간 시각" }, { hour: 3, minute: 0, label: "나온 시각" }],
+      options: ["1시간", "2시간", "2시간 30분", "1시간 30분"],
+      answer: 3,
+      explanation: "1시 30분에서 1시간이 지나면 2시 30분, 다시 30분이 지나면 3시예요. 그래서 1시간 30분이에요."
+    },
+    {
+      question: "6월 3일은 수요일이에요. 1주일 뒤는 몇 월 며칠 무슨 요일인가요?",
+      options: ["6월 9일 화요일", "6월 10일 수요일", "6월 10일 목요일", "6월 7일 일요일"],
+      answer: 1,
+      explanation: "1주일은 7일이에요. 3일에 7일을 더하면 10일이고, 요일은 그대로 수요일이에요."
+    }
+  ];
+
+  const POINTS = 20;
+  const $ = (id) => document.getElementById(id);
+  const screens = ["home", "quiz", "result", "wrong"];
+  let current = 0;
+  let answers = [];
+
+  // 짧은바늘은 1분에 0.5도씩 움직여서, 4시 35분이면 4와 5 사이에 놓인다.
+  function clockSvg(hour, minute, label) {
+    const c = 100;
+    const point = (deg, r) => {
+      const rad = (deg - 90) * Math.PI / 180;
+      return [(c + r * Math.cos(rad)).toFixed(1), (c + r * Math.sin(rad)).toFixed(1)];
+    };
+    let ticks = "";
+    for (let i = 0; i < 60; i++) {
+      const big = i % 5 === 0;
+      const [x1, y1] = point(i * 6, big ? 80 : 84);
+      const [x2, y2] = point(i * 6, 90);
+      ticks += `<line class="tick${big ? " big" : ""}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"></line>`;
+    }
+    let nums = "";
+    for (let n = 1; n <= 12; n++) {
+      const [x, y] = point(n * 30, 66);
+      nums += `<text class="num" x="${x}" y="${y}">${n}</text>`;
+    }
+    const [hx, hy] = point((hour % 12) * 30 + minute * 0.5, 44);
+    const [mx, my] = point(minute * 6, 70);
+    const name = label || `${hour}시 ${minute}분을 가리키는 시계`;
+    return `
+      <svg class="clock" viewBox="0 0 200 200" role="img" aria-label="${name}">
+        <circle class="face" cx="100" cy="100" r="94"></circle>
+        ${ticks}${nums}
+        <line class="hour" x1="100" y1="100" x2="${hx}" y2="${hy}"></line>
+        <line class="minute" x1="100" y1="100" x2="${mx}" y2="${my}"></line>
+        <circle class="pin" cx="100" cy="100" r="6"></circle>
+      </svg>`;
+  }
+
+  function clocksHtml(clocks) {
+    if (!clocks) return "";
+    const figures = clocks.map((t) => `
+      <figure>
+        ${clockSvg(t.hour, t.minute, t.label && `${t.label}: ${t.hour}시 ${t.minute}분`)}
+        ${t.label ? `<figcaption>${t.label}</figcaption>` : ""}
+      </figure>`).join("");
+    return `<div class="clocks${clocks.length > 1 ? " pair" : ""}">${figures}</div>`;
+  }
+
+  function show(id, focusId) {
+    screens.forEach((name) => { $(name).hidden = name !== id; });
+    window.scrollTo(0, 0);
+    if (focusId) $(focusId).focus();
+  }
+
+  function start() {
+    current = 0;
+    answers = QUESTIONS.map(() => null);
+    renderQuestion();
+    show("quiz", "question");
+  }
+
+  function renderQuestion() {
+    const q = QUESTIONS[current];
+    const isLast = current === QUESTIONS.length - 1;
+
+    $("count").textContent = `${current + 1}번 / ${QUESTIONS.length}문제`;
+    $("dots").innerHTML = QUESTIONS.map((_, i) => {
+      const state = i === current ? "now" : answers[i] !== null ? "done" : "";
+      return `<span class="${state}">${i + 1}</span>`;
+    }).join("");
+    $("question").textContent = q.question;
+    $("figure").innerHTML = clocksHtml(q.clocks);
+
+    const long = q.options.some((text) => text.length > 7);
+    $("options").className = `options${long ? " long" : ""}`;
+    $("options").innerHTML = q.options.map((text, i) => `
+      <label class="option${answers[current] === i ? " picked" : ""}">
+        <input type="radio" name="choice" id="choice-${current}-${i}" value="${i}"${answers[current] === i ? " checked" : ""}>
+        <span class="num" aria-hidden="true">${i + 1}</span>
+        <span class="text">${text}</span>
+      </label>`).join("");
+
+    $("prev").disabled = current === 0;
+    $("next").textContent = isLast ? "최종 제출" : "다음";
+    updateNext();
+  }
+
+  function updateNext() {
+    const answered = answers[current] !== null;
+    $("next").disabled = !answered;
+    $("hint").textContent = answered ? "" : "답을 골라야 다음 문제로 갈 수 있어요.";
+  }
+
+  function pick(index) {
+    answers[current] = index;
+    document.querySelectorAll(".option").forEach((el, i) => {
+      el.classList.toggle("picked", i === index);
+    });
+    updateNext();
+  }
+
+  function isRight(i) {
+    return answers[i] === QUESTIONS[i].answer;
+  }
+
+  function renderResult() {
+    const rightCount = QUESTIONS.filter((_, i) => isRight(i)).length;
+    const score = rightCount * POINTS;
+    const full = 534; // 2 * PI * 85
+    const filled = full * score / 100;
+
+    $("score").innerHTML = `
+      <svg viewBox="0 0 200 200" aria-hidden="true">
+        <circle class="track" cx="100" cy="100" r="85"></circle>
+        ${score > 0 ? `<circle class="fill" cx="100" cy="100" r="85" stroke-dasharray="${filled.toFixed(1)} ${full}" style="stroke-dashoffset:0"></circle>` : ""}
+      </svg>
+      <strong>${score}점</strong>`;
+    $("tally").textContent = `${QUESTIONS.length}문제 중 ${rightCount}문제를 맞혔어요`;
+    $("marks").innerHTML = QUESTIONS.map((_, i) => `
+      <li class="${isRight(i) ? "right" : "wrong"}">
+        ${i + 1}번
+        <b aria-label="${isRight(i) ? "맞음" : "틀림"}">${isRight(i) ? "○" : "✕"}</b>
+      </li>`).join("");
+
+    if (score === 100) {
+      $("message").textContent = "최고예요! 시계 박사가 되었어요! 틀린 문제가 없어요!";
+    } else if (score >= 60) {
+      $("message").textContent = "잘했어요! 틀린 문제를 한 번 더 살펴봐요.";
+    } else {
+      $("message").textContent = "괜찮아요! 시계를 보며 다시 도전해 봐요.";
+    }
+    $("show-review").hidden = score === 100;
+  }
+
+  function renderReview() {
+    $("review").innerHTML = QUESTIONS.map((q, i) => {
+      if (isRight(i)) return "";
+      return `
+        <article>
+          <h3>${i + 1}번. ${q.question}</h3>
+          ${clocksHtml(q.clocks)}
+          <p class="answer mine"><span class="tag">✕ 내가 고른 답</span><span>${answers[i] + 1}번. ${q.options[answers[i]]}</span></p>
+          <p class="answer correct"><span class="tag">○ 정답</span><span>${q.answer + 1}번. ${q.options[q.answer]}</span></p>
+          <p class="explain">${q.explanation}</p>
+        </article>`;
+    }).join("");
+  }
+
+  $("hero-clock").innerHTML = clockSvg(10, 10, "10시 10분을 가리키는 시계");
+  $("start").addEventListener("click", start);
+  $("options").addEventListener("change", (event) => pick(Number(event.target.value)));
+  $("prev").addEventListener("click", () => {
+    current -= 1;
+    renderQuestion();
+    show("quiz", "question");
+  });
+  $("next").addEventListener("click", () => {
+    if (current === QUESTIONS.length - 1) {
+      renderResult();
+      show("result", "result-title");
+      return;
+    }
+    current += 1;
+    renderQuestion();
+    show("quiz", "question");
+  });
+  $("show-review").addEventListener("click", () => {
+    renderReview();
+    show("wrong", "wrong-title");
+  });
+  $("back").addEventListener("click", () => show("result", "result-title"));
+  $("retry").addEventListener("click", () => show("home"));
+  $("retry2").addEventListener("click", () => show("home"));
+</script>
+</body>
+</html>

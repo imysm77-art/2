@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body { margin: 0; } img { max-width: 100%; } [hidden] { display: none !important; }</style>
+<title>관용표현 탐험대</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap">
+<style>
+  /* Layout: 한 장의 시험지. 제목과 진행 표시는 원고지 칸, 채점은 빨간 펜 동그라미. */
+  :root {
+    --bg: #eef5f1;
+    --paper: #fcfefc;
+    --fg: #1d3531;
+    --muted: #54706a;
+    --line: #a9cdbf;
+    --accent: #1c6b57;
+    --on-accent: #ffffff;
+    --accent-soft: #d8ede4;
+    --red: #cf2e26;
+    --red-soft: #fbe6e3;
+    --chalk: #f4c63f;
+    --display: "Jua", "Gowun Dodum", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    --body: "Gowun Dodum", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #10211d;
+      --paper: #18302a;
+      --fg: #ebf4ef;
+      --muted: #a4bfb6;
+      --line: #3f6358;
+      --accent: #6fd2b2;
+      --on-accent: #0e2420;
+      --accent-soft: #24483e;
+      --red: #ff8a7d;
+      --red-soft: #4a2723;
+      --chalk: #f4c63f;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #10211d;
+    --paper: #18302a;
+    --fg: #ebf4ef;
+    --muted: #a4bfb6;
+    --line: #3f6358;
+    --accent: #6fd2b2;
+    --on-accent: #0e2420;
+    --accent-soft: #24483e;
+    --red: #ff8a7d;
+    --red-soft: #4a2723;
+    --chalk: #f4c63f;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--body);
+    font-size: 18px;
+    line-height: 1.65;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+  .page {
+    max-width: 680px;
+    margin: 0 auto;
+    padding-block: 32px 48px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  section { display: flex; flex-direction: column; gap: 24px; }
+  h1, h2, h3 { font-family: var(--display); font-weight: 400; margin: 0; text-wrap: balance; }
+  h2 { font-size: 26px; line-height: 1.4; }
+  h2:focus { outline: none; }
+  p { margin: 0; }
+
+  /* 원고지 칸 */
+  .manuscript {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    border: 2px solid var(--accent);
+    background: var(--paper);
+    margin: 0;
+  }
+  .manuscript span {
+    aspect-ratio: 1;
+    display: grid;
+    place-items: center;
+    font-family: var(--display);
+    font-size: clamp(24px, 7.4vw, 46px);
+    line-height: 1;
+    color: var(--accent);
+    border-left: 1px solid var(--line);
+  }
+  .manuscript span:first-child { border-left: 0; }
+
+  .lead { font-size: 21px; }
+  .facts {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin: 0;
+  }
+  .facts div { display: flex; flex-direction: column; }
+  .facts dt { font-size: 15px; color: var(--muted); }
+  .facts dd { margin: 0; font-family: var(--display); font-size: 24px; }
+
+  .sample {
+    border-top: 2px solid var(--line);
+    border-bottom: 2px solid var(--line);
+    padding-block: 16px;
+  }
+  .sample .label { font-size: 15px; color: var(--muted); }
+  .sample .idiom { font-family: var(--display); font-size: 22px; }
+
+  /* 버튼 */
+  .btn {
+    font-family: var(--display);
+    font-size: 20px;
+    min-height: 56px;
+    padding: 8px 28px;
+    border-radius: 8px;
+    border: 2px solid var(--accent);
+    background: var(--paper);
+    color: var(--accent);
+    cursor: pointer;
+    transition: transform 120ms ease;
+  }
+  .btn.primary { background: var(--accent); color: var(--on-accent); }
+  .btn:hover:not(:disabled) { transform: translateY(-2px); }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn:focus-visible, .option:focus-within { outline: 3px solid var(--chalk); outline-offset: 2px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; }
+  .actions .btn { flex: 1 1 160px; }
+
+  /* 진행 칸 */
+  .progress { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .progress .count { font-family: var(--display); font-size: 20px; color: var(--muted); }
+  .cells { display: flex; border: 2px solid var(--accent); background: var(--paper); }
+  .cells span {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    font-size: 16px;
+    color: var(--muted);
+    border-left: 1px solid var(--line);
+    font-variant-numeric: tabular-nums;
+  }
+  .cells span:first-child { border-left: 0; }
+  .cells span.done { background: var(--accent-soft); color: var(--fg); }
+  .cells span.now { background: var(--accent); color: var(--on-accent); }
+
+  .passage {
+    background: var(--paper);
+    border: 2px solid var(--line);
+    border-radius: 8px;
+    padding: 16px 18px;
+  }
+
+  /* 보기 */
+  .options { display: flex; flex-direction: column; gap: 12px; border: 0; padding: 0; margin: 0; min-width: 0; }
+  .option {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 64px;
+    padding: 10px 16px;
+    background: var(--paper);
+    border: 2px solid var(--line);
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .option:hover { border-color: var(--accent); }
+  .option input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .option .num {
+    flex: none;
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border: 2px solid var(--accent);
+    border-radius: 50%;
+    font-family: var(--display);
+    color: var(--accent);
+  }
+  .option .text { min-width: 0; }
+  .option.picked { border-color: var(--accent); background: var(--accent-soft); }
+  .option.picked .num { background: var(--accent); color: var(--on-accent); }
+  .hint { font-size: 16px; color: var(--muted); min-height: 1.65em; }
+
+  /* 결과: 빨간 펜 채점 */
+  .result { text-align: center; align-items: center; }
+  .score {
+    position: relative;
+    width: min(320px, 100%);
+    aspect-ratio: 5 / 3;
+    display: grid;
+    place-items: center;
+  }
+  .score strong {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: clamp(60px, 17vw, 84px);
+    line-height: 1;
+    color: var(--red);
+    font-variant-numeric: tabular-nums;
+  }
+  .score svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .score path {
+    fill: none;
+    stroke: var(--red);
+    stroke-width: 5;
+    stroke-linecap: round;
+    stroke-dasharray: 1;
+    animation: pen 900ms ease-out;
+  }
+  @keyframes pen { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    .score path { animation: none; }
+    .btn { transition: none; }
+  }
+  .tally { font-family: var(--display); font-size: 22px; }
+  .marks {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    width: 100%;
+    max-width: 420px;
+    border: 2px solid var(--accent);
+    background: var(--paper);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .marks li {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-block: 8px;
+    border-left: 1px solid var(--line);
+    font-size: 15px;
+    color: var(--muted);
+  }
+  .marks li:first-child { border-left: 0; }
+  .marks b { font-family: var(--display); font-weight: 400; font-size: 28px; line-height: 1.2; }
+  .marks .right b { color: var(--accent); }
+  .marks .wrong b { color: var(--red); }
+  .result .actions { width: 100%; }
+
+  /* 오답 확인 */
+  .review { display: flex; flex-direction: column; gap: 16px; }
+  .review article {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: var(--paper);
+    border: 2px solid var(--line);
+    border-radius: 8px;
+    padding: 18px;
+  }
+  .review h3 { font-size: 21px; line-height: 1.45; }
+  .review .passage { background: var(--bg); padding: 12px 14px; font-size: 17px; }
+  .answer { display: flex; flex-direction: column; border-radius: 6px; padding: 8px 12px; }
+  .answer .tag { flex: none; font-family: var(--display); }
+  .answer.mine { background: var(--red-soft); }
+  .answer.mine .tag { color: var(--red); }
+  .answer.correct { background: var(--accent-soft); }
+  .answer.correct .tag { color: var(--accent); }
+  .explain { color: var(--muted); }
+
+  @media (max-width: 460px) {
+    .page { padding-block: 20px 36px; }
+    h2 { font-size: 23px; }
+    .cells span { width: 30px; height: 30px; }
+    .facts dd { font-size: 21px; }
+  }
+</style>
+
+<main class="page">
+  <section id="home">
+    <h1 aria-label="관용표현 탐험대">
+      <div class="manuscript" aria-hidden="true">
+        <span>관</span><span>용</span><span>표</span><span>현</span><span></span><span>탐</span><span>험</span><span>대</span>
+      </div>
+    </h1>
+    <p class="lead">글자 그대로의 뜻과 진짜 뜻은 달라요. 관용표현의 숨은 뜻을 찾아 문제를 풀어 보세요!</p>
+    <dl class="facts">
+      <div><dt>문제 수</dt><dd>5문제</dd></div>
+      <div><dt>문제 형식</dt><dd>4지 선다</dd></div>
+      <div><dt>만점</dt><dd>100점</dd></div>
+    </dl>
+    <div class="sample">
+      <p class="label">맛보기 관용표현</p>
+      <p class="idiom">간이 콩알만 해지다</p>
+      <p>간이 진짜로 작아진 것이 아니라, 겁을 먹어 몹시 두렵다는 뜻이에요.</p>
+    </div>
+    <div class="actions">
+      <button class="btn primary" id="start" type="button">시작하기</button>
+    </div>
+  </section>
+
+  <section id="quiz" hidden>
+    <div class="progress">
+      <span class="count" id="count"></span>
+      <div class="cells" id="cells" aria-hidden="true"></div>
+    </div>
+    <h2 id="question" tabindex="-1"></h2>
+    <p class="passage" id="passage" hidden></p>
+    <fieldset class="options" id="options" aria-labelledby="question"></fieldset>
+    <p class="hint" id="hint" aria-live="polite"></p>
+    <div class="actions">
+      <button class="btn" id="prev" type="button">이전</button>
+      <button class="btn primary" id="next" type="button">다음</button>
+    </div>
+  </section>
+
+  <section id="result" class="result" hidden>
+    <h2 id="result-title" tabindex="-1">채점 결과</h2>
+    <div class="score" id="score"></div>
+    <p class="tally" id="tally"></p>
+    <ol class="marks" id="marks"></ol>
+    <p id="message"></p>
+    <div class="actions">
+      <button class="btn primary" id="show-review" type="button">오답 확인</button>
+      <button class="btn" id="retry" type="button">다시 풀기</button>
+    </div>
+  </section>
+
+  <section id="wrong" hidden>
+    <h2 id="wrong-title" tabindex="-1">틀린 문제 확인</h2>
+    <div class="review" id="review"></div>
+    <div class="actions">
+      <button class="btn" id="back" type="button">점수 보기</button>
+      <button class="btn primary" id="retry2" type="button">다시 풀기</button>
+    </div>
+  </section>
+</main>
+
+<script>
+  const QUESTIONS = [
+    {
+      question: "'발이 넓다'의 뜻으로 알맞은 것은?",
+      options: ["발의 크기가 크다", "아는 사람이 많다", "걸음이 빠르다", "여행을 자주 다닌다"],
+      answer: 1,
+      explanation: "'발이 넓다'는 사귀어 아는 사람이 많아 활동 범위가 넓다는 뜻이에요."
+    },
+    {
+      question: "빈칸에 들어갈 표현으로 알맞은 것은?",
+      passage: "경기 종료 1분 전, 동점이 되자 관중들은 모두 (          ).",
+      options: ["배가 아팠다", "입이 짧았다", "손에 땀을 쥐었다", "코가 높았다"],
+      answer: 2,
+      explanation: "'손에 땀을 쥐다'는 아슬아슬해서 마음이 조마조마하다는 뜻이에요."
+    },
+    {
+      question: "다음 친구에게 어울리는 표현은?",
+      passage: "민수는 사고 싶은 물건을 정해 두고도, 친구가 다른 것이 좋다고 하면 금세 마음을 바꾼다.",
+      options: ["귀가 얇다", "코가 납작해지다", "발이 빠르다", "머리를 맞대다"],
+      answer: 0,
+      explanation: "'귀가 얇다'는 남의 말을 쉽게 받아들인다는 뜻이에요."
+    },
+    {
+      question: "밑줄 친 관용표현이 잘못 쓰인 문장은?",
+      options: [
+        "할머니는 <u>손이 커서</u> 음식을 늘 넉넉하게 만드신다.",
+        "동생은 <u>입이 무거워서</u> 비밀을 잘 지킨다.",
+        "누나는 <u>눈이 높아서</u> 웬만한 물건은 마음에 들어 하지 않는다.",
+        "형은 <u>발이 넓어서</u> 큰 신발만 신는다."
+      ],
+      answer: 3,
+      explanation: "'발이 넓다'는 발의 크기가 아니라 아는 사람이 많다는 뜻이에요."
+    },
+    {
+      question: "'눈코 뜰 새 없다'와 뜻이 가장 가까운 문장은?",
+      options: [
+        "눈이 아파서 눈을 뜰 수 없었다.",
+        "일이 많아서 쉴 틈 없이 바빴다.",
+        "코가 막혀서 숨쉬기 힘들었다.",
+        "졸려서 계속 눈을 감고 있었다."
+      ],
+      answer: 1,
+      explanation: "'눈코 뜰 새 없다'는 정신을 차릴 수 없을 만큼 몹시 바쁘다는 뜻이에요."
+    }
+  ];
+
+  const POINTS = 20;
+  const $ = (id) => document.getElementById(id);
+  const screens = ["home", "quiz", "result", "wrong"];
+  let current = 0;
+  let answers = [];
+
+  function show(id, focusId) {
+    screens.forEach((name) => { $(name).hidden = name !== id; });
+    window.scrollTo(0, 0);
+    if (focusId) $(focusId).focus();
+  }
+
+  function start() {
+    current = 0;
+    answers = QUESTIONS.map(() => null);
+    renderQuestion();
+    show("quiz", "question");
+  }
+
+  function renderQuestion() {
+    const q = QUESTIONS[current];
+    const isLast = current === QUESTIONS.length - 1;
+
+    $("count").textContent = `${current + 1}번 문제 / ${QUESTIONS.length}문제`;
+    $("cells").innerHTML = QUESTIONS.map((_, i) => {
+      const state = i === current ? "now" : answers[i] !== null ? "done" : "";
+      return `<span class="${state}">${i + 1}</span>`;
+    }).join("");
+    $("question").textContent = q.question;
+    $("passage").textContent = q.passage || "";
+    $("passage").hidden = !q.passage;
+
+    $("options").innerHTML = q.options.map((text, i) => `
+      <label class="option${answers[current] === i ? " picked" : ""}">
+        <input type="radio" name="choice" id="choice-${current}-${i}" value="${i}"${answers[current] === i ? " checked" : ""}>
+        <span class="num" aria-hidden="true">${i + 1}</span>
+        <span class="text">${text}</span>
+      </label>`).join("");
+
+    $("prev").disabled = current === 0;
+    $("next").textContent = isLast ? "최종 제출" : "다음";
+    updateNext();
+  }
+
+  function updateNext() {
+    const answered = answers[current] !== null;
+    $("next").disabled = !answered;
+    $("hint").textContent = answered ? "" : "답을 고르면 다음으로 넘어갈 수 있어요.";
+  }
+
+  function pick(index) {
+    answers[current] = index;
+    document.querySelectorAll(".option").forEach((el, i) => {
+      el.classList.toggle("picked", i === index);
+    });
+    $("cells").children[current].className = "now";
+    updateNext();
+  }
+
+  function isRight(i) {
+    return answers[i] === QUESTIONS[i].answer;
+  }
+
+  function renderResult() {
+    const rightCount = QUESTIONS.filter((_, i) => isRight(i)).length;
+    const score = rightCount * POINTS;
+
+    $("score").innerHTML = `
+      <svg viewBox="0 0 300 180" aria-hidden="true">
+        <path pathLength="1" d="M 62 92 C 52 40, 130 14, 190 20 C 262 28, 292 70, 272 112 C 252 158, 150 174, 86 150 C 40 134, 26 86, 74 50"></path>
+      </svg>
+      <strong>${score}점</strong>`;
+    $("tally").textContent = `${QUESTIONS.length}문제 중 ${rightCount}문제를 맞혔어요`;
+    $("marks").innerHTML = QUESTIONS.map((_, i) => `
+      <li class="${isRight(i) ? "right" : "wrong"}">
+        ${i + 1}번
+        <b aria-label="${isRight(i) ? "맞음" : "틀림"}">${isRight(i) ? "○" : "✕"}</b>
+      </li>`).join("");
+
+    if (score === 100) {
+      $("message").textContent = "완벽해요! 관용표현 박사예요! 틀린 문제가 없어요!";
+    } else if (score >= 60) {
+      $("message").textContent = "잘했어요! 틀린 문제만 다시 살펴봐요.";
+    } else {
+      $("message").textContent = "괜찮아요! 해설을 읽고 다시 도전해 봐요.";
+    }
+    $("show-review").hidden = score === 100;
+  }
+
+  function renderReview() {
+    $("review").innerHTML = QUESTIONS.map((q, i) => {
+      if (isRight(i)) return "";
+      return `
+        <article>
+          <h3>${i + 1}번. ${q.question}</h3>
+          ${q.passage ? `<p class="passage">${q.passage}</p>` : ""}
+          <p class="answer mine"><span class="tag">✕ 내가 고른 답</span><span>${answers[i] + 1}번. ${q.options[answers[i]]}</span></p>
+          <p class="answer correct"><span class="tag">○ 정답</span><span>${q.answer + 1}번. ${q.options[q.answer]}</span></p>
+          <p class="explain">${q.explanation}</p>
+        </article>`;
+    }).join("");
+  }
+
+  $("start").addEventListener("click", start);
+  $("options").addEventListener("change", (event) => pick(Number(event.target.value)));
+  $("prev").addEventListener("click", () => {
+    current -= 1;
+    renderQuestion();
+    show("quiz", "question");
+  });
+  $("next").addEventListener("click", () => {
+    if (current === QUESTIONS.length - 1) {
+      renderResult();
+      show("result", "result-title");
+      return;
+    }
+    current += 1;
+    renderQuestion();
+    show("quiz", "question");
+  });
+  $("show-review").addEventListener("click", () => {
+    renderReview();
+    show("wrong", "wrong-title");
+  });
+  $("back").addEventListener("click", () => show("result", "result-title"));
+  $("retry").addEventListener("click", () => show("home"));
+  $("retry2").addEventListener("click", () => show("home"));
+</script>
+
+</html>
